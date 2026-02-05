@@ -17,9 +17,15 @@ app.use(cookieParser())
 
 //import routes
 import userRouter from "./routes/user.routes.js"
-
+// Move this ABOVE the routes declaration
+app.use((req, res, next) => {
+    console.log(`Incoming: ${req.method} ${req.url}`);
+    next();
+});
 
 //routes declaration
 app.use("/api/v1/users", userRouter)
+// Add this to app.js temporarily
+
 
 export { app }

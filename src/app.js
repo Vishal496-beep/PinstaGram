@@ -17,6 +17,7 @@ app.use(cookieParser())
 
 //import routes
 import userRouter from "./routes/user.routes.js"
+import videoRouter from "./routes/video.routes.js"
 // Move this ABOVE the routes declaration
 app.use((req, res, next) => {
     console.log(`Incoming: ${req.method} ${req.url}`);
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
 //routes declaration
 app.use("/api/v1/users", userRouter)
 // Add this to app.js temporarily
+app.use("/api/v1/video", videoRouter)
 
 
 export { app }

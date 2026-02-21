@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { Video } from "../models/video.models.js"
-
+import { deleteFromCloudinary } from "../utils/deleteCloud.js"
 
 
 
@@ -130,42 +130,133 @@ const getVideoById = asyncHandler(async (req, res) => {
        throw new ApiError(400, "invalid video id format")
    }
   
-   await Video.findByIdAndUpdate(videoId, {
-     $inc: {$views: 0}
-   })
+  await Video.findByIdAndUpdate(
+    videoId,
+     {
+        $inc: {$views : 1}}
+    , {new : true}
+)
 
    const video = await Video.aggregate([
       {
       $match : new mongoose.Schema.Types.ObjectId(videoId)
       },
       //join owner and subscribers count
+
       {
         $lookup: {
             from: "owner",
             localField: "owner",
             foreignField: "_id",
-            as: "owner",
-            pipeline: 
+            as: "owner", 
+            pipeline: [
+                {
+                      $project : {
+                        username: 1,
+                        fullname: 1,
+                        avatar: 1
+                      }
+            }
+        ]
         }
          
+      },
+      {
+        $addFields: {
+                owner: { $first: "$owner" }
+            }
       }
    ])
+   if (!video?.length) {
+      throw new ApiError(400, "Video not found")
+   }
+    
+   
 
-//    return res.status(200).json(new ApiResponse(200, video, "video fetched successfully"))
+   return res.status(200).json(new ApiResponse(200, video, "video fetched successfully"))
 })
 
 const  updateVideo = asyncHandler(async (req, res) => {
-    //update video details like title, description, thumbnail
+    //update video details like title, description
      const { videoId } = req.params
+     const {title, description} = req.body
+     if (!mongoose.isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid video Id")
+     }
+     if (!title && !description) {
+         throw new ApiError(400, "at least one field is required")
+     }
+
+     const updatedVideo = await Video.findByIdAndUpdate(videoId, {
+        $set : {
+            title,
+            description
+        }
+       },{new : true}
+    )
+    if (!updateVideo.length) {
+        throw new ApiError(400, "Title or description are required for updating")
+        
+    }
+
+    return res.status(200).json(200,updatedVideo, "video updated successfully" )
 
 })
 
+const deleteVideo = asyncHandler(async (req, res) => {
+   const { videoId } = req.params
+   if (!mongoose.isValidObjectId(videoId)) {
+     throw new ApiError(400, "Invalid video Id")
+   }  
+    const vid = await Video.isValidObjectId(videoId) 
+    if (!vid) {
+        throw new ApiError(400, "video not found")
+    }
+    
+    if (!Video.owner.equals(req.user?._id)) {
+        throw new ApiError(403, "You do not have permissions to delete this video")
+    }
+
+    const videoDeleted = await deleteFromCloudinary(Video.videoFile, "video")
+    if (!videoDeleted) {
+        throw new ApiError(500, "Error while deleting files from Cloudinary")
+    }
+
+    await Video.findByIdAndDelete(videoId)
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "video deleted successfully"))
+})
+
+const togglePublishStatus = asyncHandler(async(req, res) => {
+    const {videoId} = req.params
+    if (!mongoose.isValidObjectId(videoId)) {
+        throw new ApiError(400, "invalid video id")
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(400, "video not found")
+    }
+
+    if (!Video.owner.equals(req.user?._id)) {
+        throw new ApiError(400, "Unauthorized to change Pusblish status")
+    }
+    video.isPublished = !video.isPublished
+    await video.save({validateBeforeSave : false})
+
+    return res
+    .status(200).
+    json(new  ApiResponse(200,{ isPublished: video.isPublished }, 
+                `Video is now ${video.isPublished ? "Public" : "Private"}`) )
+})
 
 export {
     getAllVideos,
     publishVideo,
     getVideoById,
     updateVideo,
-   // //  deleteVideo,
-   //  togglePublishStatus
+    deleteVideo,
+    togglePublishStatus
 }

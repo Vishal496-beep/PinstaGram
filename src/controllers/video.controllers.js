@@ -133,13 +133,15 @@ const getVideoById = asyncHandler(async (req, res) => {
   await Video.findByIdAndUpdate(
     videoId,
      {
-        $inc: {$views : 1}}
+        $inc: {views : 1}}
     , {new : true}
 )
 
    const video = await Video.aggregate([
       {
-      $match : new mongoose.Schema.Types.ObjectId(videoId)
+      $match : {
+        _id: new mongoose.Types.ObjectId(videoId)
+    }
       },
       //join owner and subscribers count
 
@@ -183,9 +185,19 @@ const  updateVideo = asyncHandler(async (req, res) => {
      if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video Id")
      }
+     const video = await Video.findById(videoId)
+     if (!video) {
+        throw new ApiError(400, "video not found")
+     }
+     if (!video.owner.equals(req.user?._id)) {
+        throw new ApiError(400, "You do not have permission to update this video")
+     }
      if (!title && !description) {
          throw new ApiError(400, "at least one field is required")
      }
+     const updateData = {}
+     if(title) updateData.title = title
+     if(description) updateData.description = description
 
      const updatedVideo = await Video.findByIdAndUpdate(videoId, {
         $set : {
@@ -199,7 +211,10 @@ const  updateVideo = asyncHandler(async (req, res) => {
         
     }
 
-    return res.status(200).json(200,updatedVideo, "video updated successfully" )
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,updatedVideo, "video updated successfully") )
 
 })
 
@@ -208,21 +223,26 @@ const deleteVideo = asyncHandler(async (req, res) => {
    if (!mongoose.isValidObjectId(videoId)) {
      throw new ApiError(400, "Invalid video Id")
    }  
-    const vid = await Video.isValidObjectId(videoId) 
+    const vid = await Video.findById(videoId) 
     if (!vid) {
         throw new ApiError(400, "video not found")
     }
     
-    if (!Video.owner.equals(req.user?._id)) {
+    if (!vid.owner.equals(req.user?._id)) {
         throw new ApiError(403, "You do not have permissions to delete this video")
     }
-
-    const videoDeleted = await deleteFromCloudinary(Video.videoFile, "video")
+   try {
+     await deleteFromCloudinary(vid.videoFile, "video")
+     await deleteFromCloudinary(vid.thumbnail, "image")
+     
+   } catch (error) {
     if (!videoDeleted) {
-        throw new ApiError(500, "Error while deleting files from Cloudinary")
-    }
-
-    await Video.findByIdAndDelete(videoId)
+         throw new ApiError(500, "Error while deleting files from Cloudinary")
+     }
+   }
+    
+        await Video.findByIdAndDelete(videoId)
+    
 
     return res
     .status(200)
@@ -240,7 +260,7 @@ const togglePublishStatus = asyncHandler(async(req, res) => {
         throw new ApiError(400, "video not found")
     }
 
-    if (!Video.owner.equals(req.user?._id)) {
+    if (!video.owner.equals(req.user?._id)) {
         throw new ApiError(400, "Unauthorized to change Pusblish status")
     }
     video.isPublished = !video.isPublished
@@ -248,7 +268,7 @@ const togglePublishStatus = asyncHandler(async(req, res) => {
 
     return res
     .status(200).
-    json(new  ApiResponse(200,{ isPublished: video.isPublished }, 
+    json(new ApiResponse(200,{ isPublished: video.isPublished }, 
                 `Video is now ${video.isPublished ? "Public" : "Private"}`) )
 })
 

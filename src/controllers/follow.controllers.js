@@ -75,7 +75,7 @@ const getUserChannelFollowers = asyncHandler(async (req, res) => {
         {
             $project: {
                 followerDetails: 1,
-                createdAt: 1
+                createdAt: -1
             }
         }
     ])
@@ -123,7 +123,7 @@ const getFollowingChannels = asyncHandler(async (req, res) => {
         {
             $project: {
                 followingDetails: 1,
-                createdAt: 1
+                createdAt: -1
             }
         }
     ])

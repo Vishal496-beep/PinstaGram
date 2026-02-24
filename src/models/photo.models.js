@@ -9,6 +9,10 @@ const photoSchema = new Schema(
       index: true
     },
     imageUrl: {
+      type: String, // Cloudinary URL
+      required: true
+    },
+    publicId: { // Crucial for deleting from Cloudinary later!
       type: String,
       required: true
     },
@@ -16,26 +20,13 @@ const photoSchema = new Schema(
       type: String,
       maxlength: 2200
     },
-    likes: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Like"
-      }
-    ],
-    comments: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Comment"
-      }
-    ],
     isPublic: {
       type: Boolean,
       default: true
     }
+    // We removed likes/comments arrays to keep the document lean
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 export const Photo = mongoose.model("Photo", photoSchema);

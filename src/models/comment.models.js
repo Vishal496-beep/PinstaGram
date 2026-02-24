@@ -1,33 +1,31 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, {Schema} from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const commentSchema = new Schema(
-  {
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 500
+    {
+        content: {
+            type: String,
+            required: true
+        },
+        video: {
+            type: Schema.Types.ObjectId,
+            ref: "Video"
+        },
+        photo: {
+            type: Schema.Types.ObjectId,
+            ref: "Photo"
+        },
+        owner: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        }
     },
-    owner: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true
-    },
-    post: {
-      type: Schema.Types.ObjectId,
-      required: true,
-      refPath: "postType"
-    },
-    postType: {
-      type: String,
-      required: true,
-      enum: ["Photo", "Video"]
+    {
+        timestamps: true
     }
-  },
-  {
-    timestamps: true
-  }
-);
+)
 
-export const Comment = mongoose.model("Comment", commentSchema);
+
+commentSchema.plugin(mongooseAggregatePaginate)
+
+export const Comment = mongoose.model("Comment", commentSchema)

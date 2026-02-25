@@ -66,7 +66,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if (sortBy && sortType) {
         pipeline.push({
             $sort: {
-                [sortBy]: sortType === "asc" ? 1 : -1
+                [sortBy]: sortType === "asc" ? -1 : 1
             }
         });
     } else {
@@ -74,7 +74,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
 
     const options = {
-        page: parseInt(page, 10),
+        page: parseInt(page, 1),
         limit: parseInt(limit, 10)
     };
 

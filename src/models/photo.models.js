@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 const photoSchema = new Schema(
   {
     owner: {
@@ -28,5 +28,5 @@ const photoSchema = new Schema(
   },
   { timestamps: true }
 );
-
+photoSchema.plugin(mongooseAggregatePaginate)
 export const Photo = mongoose.model("Photo", photoSchema);

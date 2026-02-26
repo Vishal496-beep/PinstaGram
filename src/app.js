@@ -19,6 +19,7 @@ app.use(cookieParser())
 import userRouter from "./routes/user.routes.js"
 import tweetRouter from "./routes/tweet.routes.js"
 import videoRouter from "./routes/video.routes.js"
+
 // Move this ABOVE the routes declaration
 app.use((req, res, next) => {
     console.log(`Incoming: ${req.method} ${req.url}`);

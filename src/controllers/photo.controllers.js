@@ -120,9 +120,12 @@ const getPhotoById = asyncHandler(async(req, res) => {
     if (!photo?.length) {
         throw new ApiError(400, "photo not found")
     }
+    if (!photo.isPublic && !photo.owner.equals(req.user?._id)) {
+        throw new ApiError(403, "Unauthorized access")
+    }
 
     return res.status(200)
-    .json(new ApiResponse(200, photo, "Photo fetched successfully"))
+    .json(new ApiResponse(200, photo[0], "Photo fetched successfully"))
 })
 
 const updatePhoto = asyncHandler(async(req, res) => {
@@ -151,7 +154,7 @@ const updatePhoto = asyncHandler(async(req, res) => {
         }
       }, {new: true}
     )
-    if (!updatedData?.length) {
+    if (!updatedData) {
         throw new ApiError(400, "caption is required for update")
     }
     return res.status(200).json(new ApiResponse(200, updatedData, "Photo updated successfully"))
@@ -166,11 +169,14 @@ const getUserPhotos = asyncHandler(async(req, res) => {
     const photoAggregate = Photo.aggregate([
         //if someone else wants to access it or if the user themselves wants to 
         {
-            $match: new mongoose.Types.ObjectId(userId),
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId),
+            
             $or: [
                 {isPublic: true},
                 {owner: req.user?._id}
             ]
+        }
         },
         //latest photoes
         {

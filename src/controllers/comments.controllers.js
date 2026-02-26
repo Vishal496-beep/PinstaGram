@@ -176,12 +176,12 @@ const addComment = asyncHandler(async (req, res) => {
         if (!mongoose.isValidObjectId(videoId)) throw new ApiError(400, "Invalid video Id")
              const video = await Video.findById(videoId)
         if(!video) throw new ApiError(404, "video not found")
-            commentData.video = video
+            commentData.video = videoId
      } else if(photoId) {
         if(!mongoose.isValidObjectId(photoId)) throw new ApiError(400, "Invalid Photo id")
             const photo = await Photo.findById(photoId)
         if(!photo) throw new ApiError(404, "Photo not found")
-            commentData.photo = photo
+            commentData.photo = photoId
      } else {
        throw new ApiError(400, "Target {video or photo} not found")
     }
@@ -195,15 +195,70 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
     // TODO: update a comment
+   const {commentId } = req.params
+   const {content} = req.body
+   if (!mongoose.isValidObjectId(commentId)) {
+      throw new ApiError(400, "Invalid comment id")
+   }
+   if (!content || content.trim() === "") {
+      throw new ApiError(400, "Content is required for updating comment")
+   }
+   
+   const comment  = await Comment.findById(commentId)
+   if (!comment) {
+      throw new ApiError(400, "comment not found")
+   }
+   if (!comment.owner.equals(req.user?._id)) {
+     throw new ApiError(403, "Unauthorized access to update comment")
+   }
+
+   const updatedComment = await Comment.findByIdAndUpdate(
+    commentId, 
+    {
+       $set: {
+        content: content
+       }
+   }, 
+   {new : true}
+)
+
+  return res
+  .status(201)
+  .json(new ApiResponse(200, updatedComment, "Comment updated successfully"))
+
 })
 
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
+    const { commentId } = req.params
+
+    if (!mongoose.isValidObjectId(commentId)) {
+        throw new ApiError(400, "Invalid comment id")
+    }
+    const comment = await Comment.findById(commentId)
+    if (!comment) {
+        throw new ApiError(400, "comment not found")
+    }
+    let parentContent;
+     if (comment.video) {
+        parentContent = await Video.findById(comment.video)
+     } else if (comment.photo) {
+         parentContent = await Photo.findById(comment.photo)
+     }
+     const isCommentOwner = comment.owner.equals(req.user?._id)
+     const isContentOwner = parentContent?.owner.equals(req.user?._id)
+     if (!isCommentOwner && !isContentOwner) {
+        throw new ApiError(403, "You are not authorized to delete this comment")
+     }
+     await Comment.findByIdAndDelete( commentId )
+
+    return res.status(200).json(new ApiResponse(200, {}, "comment deleted successfully"))
 })
 
 export {
     getVideoComments, 
     addComment, 
     updateComment,
-     deleteComment
+    deleteComment,
+    getPhotoComment
     }

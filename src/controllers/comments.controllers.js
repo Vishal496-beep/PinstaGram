@@ -97,7 +97,7 @@ const getPhotoComment = asyncHandler(async(req, res) => {
             throw new ApiError(403, "Unauthorized access for photo comment")
         }
 
-        const comment = await Comment.aggregate([
+        const comment =  Comment.aggregate([
             {
                 $match: {
                     photo: new mongoose.Types.ObjectId(photoId),
@@ -223,7 +223,7 @@ const updateComment = asyncHandler(async (req, res) => {
 )
 
   return res
-  .status(201)
+  .status(200)
   .json(new ApiResponse(200, updatedComment, "Comment updated successfully"))
 
 })
@@ -261,4 +261,4 @@ export {
     updateComment,
     deleteComment,
     getPhotoComment
-    }
+}

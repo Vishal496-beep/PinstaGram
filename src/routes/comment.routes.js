@@ -1,17 +1,30 @@
 import { Router } from 'express';
-import {
-    addComment,
-    deleteComment,
-    getVideoComments,
-    updateComment,
-} from "../controllers/comment.controller.js"
-import {verifyJWT} from "../middlewares/auth.middleware.js"
+import { 
+    getVideoComments, 
+    getPhotoComment, 
+    addComment, 
+    updateComment, 
+    deleteComment 
+} from "../controllers/comments.controllers.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+// Apply security to all routes
+router.use(verifyJWT);
 
-router.route("/:videoId").get(getVideoComments).post(addComment);
-router.route("/c/:commentId").delete(deleteComment).patch(updateComment);
+// GET comments for Video or Photo
+router.route("/v/:videoId").get(getVideoComments);
+router.route("/p/:photoId").get(getPhotoComment);
 
-export default router
+// POST comment (Generic)
+// Pattern: /api/v1/comments/v/:videoId OR /api/v1/comments/p/:photoId
+router.route("/v/:videoId").post(addComment);
+router.route("/p/:photoId").post(addComment);
+
+// UPDATE and DELETE (By Comment ID)
+router.route("/c/:commentId")
+    .patch(updateComment)
+    .delete(deleteComment);
+
+export default router;

@@ -15,6 +15,11 @@ const commentSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Photo"
         },
+        // models/comment.models.js mein add karein
+        tweet: {
+              type: Schema.Types.ObjectId,
+              ref: "Tweet"
+        },
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User"

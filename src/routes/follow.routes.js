@@ -3,7 +3,7 @@ import {
     toggleFollow, 
     getUserChannelFollowers, 
     getFollowingChannels 
-} from "../controllers/follower.controller.js";
+} from "../controllers/follow.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();

@@ -4,6 +4,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {Video} from "../models/video.models.js"
+import {Tweet} from "../models/tweet.models.js"
 import {Photo} from "../models/photo.models.js"
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
@@ -85,7 +86,51 @@ const getVideoComments = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, comments, "comments fetched successfully"))
     
 })
+const getTweetComments = asyncHandler(async(req, res) => {
+    const { tweetId } = req.params
+    const { page = 1, limit = 10 } = req.query
+    if (!mongoose.isValidObjectId(tweetId)) throw new ApiError(400, "Invalid tweet id")
+    const tweet = await Tweet.findById(tweetId)
+  if (!tweet) throw new ApiError(400, "tweet not found")
+     const commentAggregade = Comment.aggregate([
+     {
+        $match: {
+            tweet: new mongoose.Types.ObjectId(tweetId)
+        }
+     },
+     {
+        $lookup: {
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+            pipeline: [
+                {
+                    $project: {
+                        username: 1,
+                        fullname: 1,
+                        avatar: 1
+                    }
+                }
+            ]
+        }
+     }, 
+     {
+         $addFields: {
+            owner: {$first: "$owner"}
+         }
+     },
+     {
+       $sort: { createdAt: -1 }
+     }
+    ])
+    const comment = await Comment.aggregatePaginate(commentAggregade, {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10)
+    })
 
+    return res.status(200).json(new ApiResponse(200, comment, "Tweet comments fetched successfully"))
+})
 const getPhotoComment = asyncHandler(async(req, res) => {
         const { photoId } = req.params
         const { page = 1, limit = 10 } = req.query
@@ -165,7 +210,7 @@ const getPhotoComment = asyncHandler(async(req, res) => {
 
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video, photo
-    const { videoId, photoId } = req.params; // both parameters check 
+    const { videoId, photoId, tweetId } = req.params; // both parameters check 
     const { content } = req.body;
     if(!content) throw new ApiError(400, "content is required")
     let commentData = {
@@ -182,7 +227,12 @@ const addComment = asyncHandler(async (req, res) => {
             const photo = await Photo.findById(photoId)
         if(!photo) throw new ApiError(404, "Photo not found")
             commentData.photo = photoId
-     } else {
+     } else if(tweetId){
+         if (!mongoose.isValidObjectId(tweetId)) throw new ApiError(400, "Invalid tweet id")
+            const tweet = await Tweet.findById(tweetId)
+            if (!tweet) throw new ApiError(400, "Tweet not found")
+             commentData.tweet = tweetId
+     }else {
        throw new ApiError(400, "Target {video or photo} not found")
     }
 
@@ -260,5 +310,6 @@ export {
     addComment, 
     updateComment,
     deleteComment,
-    getPhotoComment
+    getPhotoComment,
+    getTweetComments
 }

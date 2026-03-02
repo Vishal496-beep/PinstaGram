@@ -8,7 +8,7 @@ import mongoose, { isValidObjectId } from "mongoose"
 
 const publishPhoto = asyncHandler(async(req, res) => {
     const { caption, isPublic } = req.body;
-    const photoLocalPath = req.file?.path
+    const photoLocalPath = req.files?.photoFile[0]?.path
     if (!photoLocalPath) {
         throw new ApiError(400, "photo file is missing")
     }
@@ -88,7 +88,7 @@ const getPhotoById = asyncHandler(async(req, res) => {
         throw new ApiError(400, "Invalid photo id")
     }
 
-    const photo = await Photo.aggregate([
+    const photoAggregate = await Photo.aggregate([
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(photoId)
@@ -117,9 +117,10 @@ const getPhotoById = asyncHandler(async(req, res) => {
             }
         }
     ])
-    if (!photo?.length) {
+    if (!photoAggregate?.length) {
         throw new ApiError(400, "photo not found")
     }
+    const photo = photoAggregate[0]
     if (!photo.isPublic && !photo.owner.equals(req.user?._id)) {
         throw new ApiError(403, "Unauthorized access")
     }

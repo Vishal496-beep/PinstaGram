@@ -100,7 +100,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
             },
             {
                 $group: {
-                    id: null,
+                    _id: null,
                     count: {$sum: 1},
                     views: {$sum: "$views"},
                     totalLikes: {$sum: {$size: "$allLikes"}}
@@ -115,17 +115,17 @@ const getChannelStats = asyncHandler(async (req, res) => {
             owner: user,
             followers : followCount || 0,
             video: {
-                total: videoStats[0]?.count || 0,
-                views: videoStats[0]?.views || 0,
-                likes: videoStats[0]?.totalLikes || 0
+                total: (videoStats && videoStats[0]) ? videoStats[0].count : 0,
+                views: (videoStats && videoStats[0]) ? videoStats[0].views : 0,
+                likes: (videoStats && videoStats[0]) ?videoStats[0].totalLikes :0
             },
             photo: {
-                total: photoStats[0]?.count || 0,
-                likes: photoStats[0]?.totalLikes || 0
+                total: (photoStats && photoStats[0]) ? photoStats[0].count : 0,
+                likes: (photoStats && photoStats[0]) ? photoStats[0].totalLikes : 0
             },
             tweet: {
-                total: tweetStats[0]?.count || 0,
-                likes: tweetStats[0]?.likes || 0
+                total: (tweetStats && tweetStats[0]) ? tweetStats[0].count : 0,
+                likes: (tweetStats && tweetStats[0]) ? tweetStats[0].totalLikes : 0
             }
     }
     return res 
@@ -134,7 +134,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
 })
 
-const getChannelPhotoVideos = asyncHandler(async (req, res) => {
+const getChannelPhotoVideosTweets = asyncHandler(async (req, res) => {
     // TODO: Get all the videos uploaded by the channel
     const userId = req.user?._id
        if (!mongoose.isValidObjectId(userId)) {
@@ -261,5 +261,5 @@ const getChannelPhotoVideos = asyncHandler(async (req, res) => {
 
 export {
     getChannelStats, 
-    getChannelPhotoVideos
+    getChannelPhotoVideosTweets
     }

@@ -122,7 +122,7 @@ const togglePhotoLike = asyncHandler(async(req, res) => {
     
 })
 
-const getLikedVideos = asyncHandler(async (req, res) => {
+const getAllLiked = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
      const allLikes = await Like.aggregate([
         {
@@ -204,7 +204,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
                     ]
                 },
                 content: {
-                    $coalesce: ["$video", "$comment", "$photo", "$tweet"]
+                    $ifNull: ["$video", "$comment", "$photo", "$tweet"]
                 },
                 createdAt: 1
             }
@@ -223,6 +223,6 @@ export {
     toggleCommentLike,
     toggleTweetLike,
     toggleVideoLike,
-    getLikedVideos,
+    getAllLiked,
     togglePhotoLike
 }

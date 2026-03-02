@@ -16,27 +16,22 @@ const router = Router();
 router.use(verifyJWT); 
 
 router.route("/")
-    .get(getAllPhotos) // Public photos fetch karne ke liye
+    .get(getAllPhotos) 
     .post(
         upload.fields([
             {
-                name: "photoFile",
+                name: "photoFile", // Make sure controller uses this same name
                 maxCount: 1,
             }
         ]),
-        uploadPhoto
+        publishPhoto // Fix: Match with import name above
     );
 
 router.route("/:photoId")
     .get(getPhotoById)
-    .delete(deletePhoto)
-    .patch(updatePhoto);
+    .patch(upload.single("photoFile"), updatePhoto) // If updating image, add multer
+    .delete(deletePhoto);
+router.route("/user/:userId").get(getUserPhotos); 
 
-// --- COMMENT ROUTES FOR PHOTOS ---
-
-router.route("/c/:photoId")
-    .get(getUserPhotos) // user photo 
-    .get(getPhotoComment) // Photo ke comments dekhne ke liye
-    .post(addComment);    // Photo par comment karne ke liye
 
 export default router;

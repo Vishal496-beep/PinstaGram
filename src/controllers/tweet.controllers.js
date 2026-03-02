@@ -35,7 +35,11 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const tweet = await Tweet.aggregate(
         [
             {
-                $match : new mongoose.Types.ObjectId(userId)
+                $match : {
+                    owner:{
+                        owner: new mongoose.Types.ObjectId(userId)
+                    }
+                }
             },
             {
                 $lookup: {
@@ -90,14 +94,14 @@ const updateTweet = asyncHandler(async (req, res) => {
     if (!tweet) {
         throw new ApiError(400, "tweet not found")
     }
-    if (!Tweet.owner.equals(req.user?._id)) {
-        throw new ApiError(400, "Unauthorized request for update")
+   if (tweet?.owner?.toString() !== req.user?._id?.toString()) {
+        throw new ApiError(403, "Unauthorized: You cannot update this tweet");
     }
     tweet.content = content
     tweet.save()
     return res
     .status(200)
-    .json(200, tweet, "Tweet updated successfully")
+    .json(new ApiResponse(200, tweet, "Tweet updated successfully"))
     
 })
 
@@ -107,18 +111,18 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if (!isValidObjectId(tweetId)) {
         throw new ApiError(400, "Invalid tweet id")
     }
-    const tweet = await Tweet.findById(req.users?._id)
+    const tweet = await Tweet.findById(tweetId)
     if (!tweet) {
-        throw new ApiError(400, "Tweet not found")
+        throw new ApiError(404, "Tweet not found")
     }
 
-    if (!Tweet.owner.equals(req.user?._id)) {
-        throw new ApiError(400, "Unauthorized user request to delete tweet")
+      if (tweet?.owner?.toString() !== req.user?._id?.toString()) {
+        throw new ApiError(403, "Unauthorized: You cannot update this tweet");
     }
     await Tweet.findByIdAndDelete(tweetId)
     return res
     .status(200)
-    .json(200, {}, "tweet deleted successfully")
+    .json(new ApiResponse(200, {}, "tweet deleted successfully"))
 })
 
 export {

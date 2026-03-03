@@ -25,6 +25,7 @@ import likeRouter from "./routes/likes.routes.js"
 import dashboardRouter from "./routes/dashboard.routes.js"
 import photoRouter from "./routes/photo.routes.js"
 import healthChecker from "./routes/healthcheck.routes.js"
+import searchRouter from "./routes/search.routes.js"
 
 // Move this ABOVE the routes declaration
 app.use((req, res, next) => {
@@ -42,6 +43,7 @@ app.use("/api/v1/like", likeRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 app.use("/api/v1/photo", photoRouter)
 app.use("/api/v1/healthcheck", healthChecker)
+app.use("/api/v1/search", searchRouter)
 
 
 export { app }

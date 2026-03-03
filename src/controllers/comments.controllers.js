@@ -14,11 +14,14 @@ const getVideoComments = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid video id")
     }
     const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(400, "video does not exist")
+    }
     if (!video.isPublished && !video.owner.equals(req.user?._id)) {
         throw new ApiError(403, "Unauthorized access")
     }
 
-    const commentAggregate = await Comment.aggregate([
+    const commentAggregate = Comment.aggregate([
         {
             $match: {
                 video: new mongoose.Types.ObjectId(videoId),
